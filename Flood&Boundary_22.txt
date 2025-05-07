@@ -1,0 +1,95 @@
+#include <GL/glut.h>
+ #include <iostream>
+ using namespace std;
+ int width = 600, height = 600;
+ // Initial polygon points
+ void drawPolygon() {
+    glColor3f(1.0, 0.0, 0.0); // Red border
+    glBegin(GL_LINE_LOOP);
+        glVertex2i(200, 200);
+        glVertex2i(400, 200);
+        glVertex2i(400, 400);
+        glVertex2i(200, 400);
+    glEnd();
+    glFlush();
+ }
+ // Get pixel color at (x, y)
+ void getPixelColor(int x, int y, float* color) {
+    glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, color);
+ }
+ // Set pixel at (x, y)
+ void setPixelColor(int x, int y, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glBegin(GL_POINTS);
+        glVertex2i(x, y);
+    glEnd();
+    glFlush();
+ }
+ // Compare two colors
+ bool isSameColor(float* color1, float* color2) {
+    return (int)(color1[0]*255) == (int)(color2[0]*255) &&
+           (int)(color1[1]*255) == (int)(color2[1]*255) &&
+           (int)(color1[2]*255) == (int)(color2[2]*255);
+ }
+ // Flood Fill (4-connected)
+ void floodFill4(int x, int y, float* oldColor, float* newColor) {
+    float current[3];
+    getPixelColor(x, y, current);
+    if (isSameColor(current, oldColor)) {
+        setPixelColor(x, y, newColor[0], newColor[1], newColor[2]);
+        floodFill4(x + 1, y, oldColor, newColor);
+        floodFill4(x - 1, y, oldColor, newColor);
+        floodFill4(x, y + 1, oldColor, newColor);
+        floodFill4(x, y - 1, oldColor, newColor);
+    }
+}
+ // Boundary Fill (4-connected)
+ void boundaryFill4(int x, int y, float* boundaryColor, float* fillColor) {
+    float current[3];
+    getPixelColor(x, y, current);
+    if (!isSameColor(current, boundaryColor) && !isSameColor(current, fillColor)) {
+        setPixelColor(x, y, fillColor[0], fillColor[1], fillColor[2]);
+        boundaryFill4(x + 1, y, boundaryColor, fillColor);
+        boundaryFill4(x - 1, y, boundaryColor, fillColor);
+        boundaryFill4(x, y + 1, boundaryColor, fillColor);
+        boundaryFill4(x, y - 1, boundaryColor, fillColor);
+    }
+ }
+ // Menu callback
+ void menu(int choice) {
+    float oldColor[3] = {1.0, 1.0, 1.0}; // background white
+    float fillColor[3] = {0.0, 1.0, 0.0}; // fill green
+    float boundaryColor[3] = {1.0, 0.0, 0.0}; // red boundary
+    if (choice == 1) {
+        floodFill4(250, 250, oldColor, fillColor);
+    } else if (choice == 2) {
+        boundaryFill4(250, 250, boundaryColor, fillColor);
+    }
+ }
+ // Display function
+ void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawPolygon();
+    glFlush();
+ }
+ // Initialize OpenGL
+ void init() {
+    glClearColor(1, 1, 1, 1); // White background
+    gluOrtho2D(0, width, 0, height);
+    glPointSize(1.0);
+ }
+ int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(width, height);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("Flood Fill & Boundary Fill (4-connected)");
+    init();
+    glutDisplayFunc(display);
+glutCreateMenu(menu);
+ glutAddMenuEntry("Flood Fill (4-connected)", 1);
+ glutAddMenuEntry("Boundary Fill (4-connected)", 2);
+ glutAttachMenu(GLUT_RIGHT_BUTTON);
+ glutMainLoop();
+ return 0;
+ }

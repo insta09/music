@@ -1,0 +1,170 @@
+#include <iostream>
+#include <GL/glut.h>
+#include <math.h>
+using namespace std;
+
+int w = 1200;
+int h = 700;
+
+void myInit(void) {
+    glClearColor(1.0, 1.0, 1.0, 1.0); // White background
+    glColor3f(0, 0, 0); // Black drawing color
+    glPointSize(2.0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-w, w, -h, h);
+}
+
+// Sign Function
+int sign(int num) {
+    if (num > 0) return 1;
+    else if (num < 0) return -1;
+    else return 0;
+}
+
+// DDA Line Algorithm
+void ddaAlgorithm(int x1, int y1, int x2, int y2, int LineType) {
+    if (x1 == x2 && y1 == y2) {
+        cout << "Error: Source and Destination points are the same! Line cannot be drawn." << endl;
+        return;
+    }
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+    int length = max(abs(dx), abs(dy));
+    float Xinc = (float)dx / length;
+    float Yinc = (float)dy / length;
+    float x = x1 + 0.5 * sign(Xinc);
+    float y = y1 + 0.5 * sign(Yinc);
+
+    glBegin(GL_POINTS);
+    for (int i = 0; i <= length; i++) {
+        if (LineType == 1) { // Solid
+            glVertex2i(round(x), round(y));
+        } else if (LineType == 2) { // Dashed
+            if ((i % 10) < 5) glVertex2i(round(x), round(y));
+        } else if (LineType == 3) { // Dotted
+            if (i % 10 == 0) glVertex2i(round(x), round(y));
+        }
+        x += Xinc;
+        y += Yinc;
+    }
+    glEnd();
+    glFlush();
+}
+
+// Axis Drawing
+void drawAxis() {
+    glColor3f(1, 0, 0); // Red for axis
+    ddaAlgorithm(-w, 0, w, 0, 1);
+    ddaAlgorithm(0, -h, 0, h, 1);
+}
+
+// Monitor Drawing
+void drawMonitor() {
+    // Outer frame
+    ddaAlgorithm(400, 300, 800, 300, 1);
+    ddaAlgorithm(800, 300, 800, 600, 1);
+    ddaAlgorithm(800, 600, 400, 600, 1);
+    ddaAlgorithm(400, 600, 400, 300, 1);
+
+    // Inner screen bezel
+    ddaAlgorithm(420, 320, 780, 320, 1);
+    ddaAlgorithm(780, 320, 780, 580, 1);
+    ddaAlgorithm(780, 580, 420, 580, 1);
+    ddaAlgorithm(420, 580, 420, 320, 1);
+
+    // Stand
+    ddaAlgorithm(580, 300, 580, 250, 1);
+    ddaAlgorithm(520, 250, 640, 250, 1);
+}
+
+// Square Waveform Drawing
+void drawSquareWaveform() {
+    int x = -500;
+    int y = 0;
+    int width = 50;
+    int height = 100;
+    for (int i = 0; i < 10; i++) {
+        ddaAlgorithm(x, y, x, y + height, 1);
+        ddaAlgorithm(x, y + height, x + width, y + height, 1);
+        ddaAlgorithm(x + width, y + height, x + width, y, 1);
+        ddaAlgorithm(x + width, y, x + 2 * width, y, 1);
+        x += 2 * width;
+    }
+}
+
+// Triangle Waveform Drawing
+void drawTriangleWaveform() {
+    int x = -500;
+    int y = 0;
+    int width = 50;
+    int height = 100;
+    for (int i = 0; i < 10; i++) {
+        ddaAlgorithm(x, y, x + width, y + height, 1);
+        ddaAlgorithm(x + width, y + height, x + 2 * width, y, 1);
+        x += 2 * width;
+    }
+}
+
+// Zig-Zag Line Drawing
+void drawZigZagLines() {
+    int x = -500;
+    int y = 0;
+    int width = 50;
+    int height = 100;
+    for (int i = 0; i < 10; i++) {
+        ddaAlgorithm(x, y, x + width, y + height, 1);         // Up stroke
+        ddaAlgorithm(x + width, y + height, x + 2 * width, y, 1); // Down stroke
+        x += 2 * width;
+    }
+}
+
+// Display
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawAxis();
+}
+
+// Menu Handling
+void menu(int index) {
+    if (index == 1) {
+        ddaAlgorithm(100, 100, 200, 200, 1); // Solid Line
+    } else if (index == 2) {
+        ddaAlgorithm(-100, -200, -500, -300, 2); // Dashed Line
+    } else if (index == 3) {
+        ddaAlgorithm(200, -100, 500, -200, 3); // Dotted Line
+    } else if (index == 4) {
+        drawMonitor(); // Monitor
+    } else if (index == 5) {
+        drawSquareWaveform(); // Square waveform
+    } else if (index == 6) {
+        drawTriangleWaveform(); // Triangle waveform
+    } else if (index == 7) {
+        drawZigZagLines(); // Zig-zag lines
+    }
+}
+
+// Main Function
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(w, h);
+    glutInitWindowPosition(100, 50);
+    glutCreateWindow("DDA Algorithm & Shapes");
+    glutDisplayFunc(display);
+    myInit();
+
+    // Right-click Menu
+    glutCreateMenu(menu);
+    glutAddMenuEntry("Simple Line", 1);
+    glutAddMenuEntry("Dashed Line", 2);
+    glutAddMenuEntry("Dotted Line", 3);
+    glutAddMenuEntry("Monitor", 4);
+    glutAddMenuEntry("Square Waveform", 5);
+    glutAddMenuEntry("Triangle Waveform", 6);
+    glutAddMenuEntry("Zig-Zag Lines", 7);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutMainLoop();
+    return 0;
+}

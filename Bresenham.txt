@@ -1,0 +1,187 @@
+#include <iostream>
+#include <GL/glut.h>
+#include <cmath>
+using namespace std;
+
+int wl = 1200;
+int wh = 1000;
+
+void myInit(void) {
+    glClearColor(1.0, 1.0, 1.0, 1.0); // Set background color to white
+    glColor3i(0, 0, 0); // Set line color to black
+    glPointSize(2.0); // Set point size
+    gluOrtho2D(-wl, wl, -wh, wh); // Set 2D orthogonal projection
+}
+
+// Sign function to determine the direction of the line
+int sign(int val) {
+    if (val < 0) {
+        return -1;
+    } else if (val > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+// Bresenham's Line Algorithm
+void BAlgorihtm(int x1, int y1, int x2, int y2, int LineType) {
+
+    // Validation for checking source and destination points
+    if (x1 == x2 && y1 == y2) {
+        cout << "Error: Source and Destination points are the same! Line cannot be drawn." << endl;
+        return;
+    }
+
+    int x = x1;
+    int y = y1;
+    int Dx = abs(x2 - x1);
+    int Dy = abs(y2 - y1);
+    int s1 = sign(x2 - x1);
+    int s2 = sign(y2 - y1);
+    int interchange;
+
+    if (Dy > Dx) {
+        int temp = Dx;
+        Dx = Dy;
+        Dy = temp;
+        interchange = 1;
+    } else {
+        interchange = 0;
+    }
+
+    int e = 2 * Dy - Dx;
+
+    glBegin(GL_POINTS);
+    for (int i = 1; i <= Dx; i++) {
+        if (LineType == 1) { // Solid line
+            glVertex2i(x, y);
+        } else if (LineType == 2) { // Dashed line
+            if (i % 5 == 0) {
+                glVertex2i(x, y);
+            }
+        } else if (LineType == 3) { // Dotted line
+            if (i % 10 == 0) {
+                glVertex2i(x, y);
+            }
+        }
+
+        while (e >= 0) {
+            if (interchange == 1) {
+                x = x + s1;
+            } else {
+                y = y + s2;
+            }
+            e = e - 2 * Dx;
+        }
+
+        if (interchange == 1) {
+            y = y + s2;
+        } else {
+            x = x + s1;
+        }
+        e = e + 2 * Dy;
+    }
+    glEnd();
+    glFlush();
+}
+
+// Drawing Axis
+void drawAxis() {
+    BAlgorihtm(-wl, 0, wl, 0, 1); // X-axis
+    BAlgorihtm(0, -wh, 0, wh, 1); // Y-axis
+}
+
+// Square Waveform Drawing
+void drawSquareWaveform() {
+    int x = -500;
+    int y = 0;
+    int width = 50;
+    int height = 100;
+    for (int i = 0; i < 10; i++) {
+        BAlgorihtm(x, y, x, y + height, 1);               // Vertical line up
+        BAlgorihtm(x, y + height, x + width, y + height, 1); // Horizontal line right
+        BAlgorihtm(x + width, y + height, x + width, y, 1);  // Vertical line down
+        BAlgorihtm(x + width, y, x + 2 * width, y, 1);     // Horizontal line right
+        x += 2 * width;  // Move to the next square's starting position
+    }
+}
+
+// Triangle Waveform Drawing
+void drawTriangleWaveform() {
+    int x = -500;
+    int y = 0;
+    int width = 50;
+    int height = 100;
+    for (int i = 0; i < 10; i++) {
+        BAlgorihtm(x, y, x + width, y + height, 1);             // Upward slope
+        BAlgorihtm(x + width, y + height, x + 2 * width, y, 1); // Downward slope
+        x += 2 * width;  // Move to the next triangle's starting position
+    }
+}
+
+// Diagram Drawing (previous diagram function)
+void drawDiag() {
+    BAlgorihtm(300, -300, 750, -300, 1);
+    BAlgorihtm(300, -700, 750, -700, 1);
+
+    BAlgorihtm(300, -300, 300, -700, 1);
+    BAlgorihtm(750, -300, 750, -700, 1);
+
+    BAlgorihtm(300, -500, 525, -300, 1);
+    BAlgorihtm(525, -300, 750, -500, 1);
+    BAlgorihtm(750, -500, 525, -700, 1);
+    BAlgorihtm(525, -700, 300, -500, 1);
+    BAlgorihtm(412, -400, 637, -400, 1);
+    BAlgorihtm(637, -400, 637, -600, 1);
+    BAlgorihtm(637, -600, 412, -600, 1);
+    BAlgorihtm(412, -600, 412, -400, 1);
+}
+
+// Display Function
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawAxis();
+}
+
+// Menu Handling
+void menu(int index) {
+    if (index == 1) {
+        BAlgorihtm(100, 100, 200, 200, 1); // Simple line
+    } else if (index == 2) {
+        BAlgorihtm(-100, -50, -100, -300, 2); // Dashed line
+    } else if (index == 3) {
+        BAlgorihtm(-300, -450, -1000, -500, 3); // Dotted line
+    } else if (index == 4) {
+        drawSquareWaveform(); // Square waveform
+    } else if (index == 5) {
+        drawTriangleWaveform(); // Triangle waveform
+    } else if (index == 6) {
+        drawDiag(); // Diagram
+    }
+}
+
+// Main Function
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(wl, wh);
+    glutInitWindowPosition(100, 50);
+    glutCreateWindow("Bresenham's Line Drawing Algorithm");
+
+    glutDisplayFunc(display);
+    myInit();
+
+    // Right-click menu
+    glutCreateMenu(menu);
+    glutAddMenuEntry("Simple Line", 1);
+    glutAddMenuEntry("Dashed Line", 2);
+    glutAddMenuEntry("Dotted Line", 3);
+    glutAddMenuEntry("Square Waveform", 4);
+    glutAddMenuEntry("Triangle Waveform", 5);
+    glutAddMenuEntry("Diagram", 6); // Added diagram option
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutMainLoop();
+    return 0;
+}
